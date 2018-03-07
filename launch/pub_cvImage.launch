@@ -1,0 +1,9 @@
+<launch>
+  <arg name="color_image_topic" default="camera/color/image_raw"/>  
+  <arg name="point_cloud_topic" default="camera/depth/points"/>
+
+  <node pkg="quadrobot_vision" type="msgs_to_mat" respawn="false" name="converter" output="screen">
+    <param name="color_image_topic" value="$(arg color_image_topic)"/>
+    <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/>
+  </node>
+</launch>

@@ -1,0 +1,17 @@
+<!-- ... -->
+<launch>
+  <node pkg="quadrobot_vision" type="label_image.py" name="label_image" output="screen">
+  
+  
+  <!-- topics -->
+    <param name="rgb_topic"    value="/camera/rgb/image_color" />
+    
+  <!-- classification -->
+    <param name="model_file"   value="$(find quadrobot_vision)/model/output_graph.pb"/>
+    <param name="label_file"  value="$(find quadrobot_vision)/model/output_labels.txt"/>
+    <param name="input_height"  value="224"/>    
+    <param name="input_width"  value="224"/>    
+  </node>
+
+
+</launch>

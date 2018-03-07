@@ -1,0 +1,26 @@
+<!-- ... -->
+<launch>
+  <node pkg="quadrobot_vision" type="object_detection" name="object_detection" output="screen">
+    <param name="point_cloud_topic"     value="/camera/depth_registered/points"/>
+    <param name="doFILTER"              value="true"/>  
+    <!-- pass filter-->
+    <param name="x_min"              value="-10.0"/>
+    <param name="x_max"              value="30.0"/>
+    <param name="y_min"              value="-10.0"/>
+    <param name="y_max"              value="10.0"/>
+    <param name="z_min"              value="-3.0"/>
+    <param name="z_max"              value="0.0"/>
+    <!-- voxel filter-->
+    <param name="val_vox"            value="0.05f"/>
+    <!-- plane extraction -->
+    <param name="ClusterTolerance"   value="0.02"/>
+    <param name="MinClusterSize"     value="100"/>
+    <param name="MaxClusterSize"     value="25000"/>
+  </node>
+  
+  <!-- 
+  <node pkg="tf2_ros" type="static_transform_publisher" name="realsense_base"
+    args="0 0 1.0 0 0.707 0 0.707 map camera_link" />
+    -->
+
+</launch>

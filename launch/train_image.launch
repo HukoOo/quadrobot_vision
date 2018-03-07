@@ -1,0 +1,21 @@
+<!-- ... -->
+<launch>
+  <node pkg="quadrobot_vision" type="train_image.py" name="mobilenet" output="screen">
+  
+    <param name="image_dir"    value="/media/jjm/1TB SSD/Pangyo/Pangyo" /> 
+    <param name="output_graph"  value="$(find quadrobot_vision)/model/output_graph.pb"/>
+    <param name="intermediate_output_graphs_dir"  value="$(find quadrobot_vision)/model/tmp/intermediate_graph/" />
+    <param name="output_labels"    value="$(find quadrobot_vision)/model/output_labels.txt"/>
+    <param name="summaries_dir"   value="$(find quadrobot_vision)/model/retrain_logs"/>
+    <param name="how_many_training_steps" value="4000" />
+    <param name="learning_rate"     value="0.001" />
+    <param name="model_dir"  value="$(find quadrobot_vision)/model/imagenet" />
+    <param name="bottleneck_dir"  value="$(find quadrobot_vision)/model/bottleneck" />
+    <param name="random_crop"    value="0" />
+    <param name="random_scale"   value="30"/>
+    <param name="random_brightness"  value="30"/>
+    <param name="architecture"  value="mobilenet_1.0_224"/>    
+  </node>
+
+
+</launch>
