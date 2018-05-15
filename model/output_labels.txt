@@ -1,0 +1,16 @@
+wood tile
+stone grass
+twig
+snow asphalt
+snow stone tile
+asphalt
+frozen
+soil
+leaves
+concrete
+stone brick
+steel storm drain
+grass
+stone gravel
+stone tile
+stone flagstone
