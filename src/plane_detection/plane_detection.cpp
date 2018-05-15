@@ -104,19 +104,20 @@ class Cluster
     nh.getParam("/plane_detection/z_max", z_max);
 
     // Topics
-    std::string point_cloud_topic_ = "/camera/depth_registered/points";
+    std::string point_cloud_topic_ = "/camera/depth/points";
     nh.getParam("point_cloud_topic", point_cloud_topic_);
 
     
-    // Create a ROS publisher
-    cloud_sub_ = nh_.subscribe ("/camera/depth_registered/points", 1, &Cluster::cloud_cb,this);
+    // Create ROS sub & publisher of point clouds
+    cloud_sub_ = nh_.subscribe (point_cloud_topic_, 1, &Cluster::cloud_cb,this);
     cloud_pub_ = nh_.advertise<pcl::PointCloud<PointT>>("/cluster/output_cloud",1);
             
-
-    // Create a ROS publisher for the output model coefficients
+    // Create ROS publisher for the output model coefficients
     pub_cluster = nh.advertise<sensor_msgs::PointCloud2> ("/plane/clusters", 100);
     pub_marker = nh.advertise<visualization_msgs::MarkerArray> ("/plane/markers", 10);
     pub_plane = nh.advertise<quadrobot_msgs::PlaneArray> ("/plane/info_array", 10);
+
+
   }
   ~Cluster()
   {
@@ -315,8 +316,8 @@ int getPlaneModel(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_ptr, pcl::Mode
 
     // compute principal direction
     Eigen::Vector4f centroid;
-    pcl::compute3DCentroid(*point_cloud_ptr, centroid);
     Eigen::Matrix3f covariance;
+    pcl::compute3DCentroid(*point_cloud_ptr, centroid);
     computeCovarianceMatrixNormalized(*point_cloud_ptr, centroid, covariance);
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigen_solver(covariance, Eigen::ComputeEigenvectors);
     Eigen::Matrix3f eigDx = eigen_solver.eigenvectors();
@@ -340,39 +341,35 @@ int getPlaneModel(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_ptr, pcl::Mode
     const Eigen::Vector3f tfinal = eigDx*mean_diag + centroid.head<3>();
 
 
-    double width = max_pt.z-min_pt.z;
-    double depth = max_pt.y-min_pt.y;
-    double height= max_pt.x-min_pt.x;
+    double width = max_pt.z-min_pt.z; // longest line of cube
+    double height= max_pt.y-min_pt.y; 
+    double depth = max_pt.x-min_pt.x; // shortest line of cube
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
-    cloud_ptr->resize(9);
-    cloud_ptr->points[0] = pcl::PointXYZ(max_pt.x, max_pt.y, max_pt.z);		// max_pt
-    cloud_ptr->points[1] = pcl::PointXYZ(max_pt.x, max_pt.y, min_pt.z);
-    cloud_ptr->points[2] = pcl::PointXYZ(max_pt.x, min_pt.y, max_pt.z);
-    cloud_ptr->points[3] = pcl::PointXYZ(min_pt.x, max_pt.y, max_pt.z);
-    cloud_ptr->points[4] = pcl::PointXYZ(min_pt.x, min_pt.y, min_pt.z);		// min_pt
-    cloud_ptr->points[5] = pcl::PointXYZ(min_pt.x, min_pt.y, max_pt.z);
-    cloud_ptr->points[6] = pcl::PointXYZ(min_pt.x, max_pt.y, min_pt.z);
-    cloud_ptr->points[7] = pcl::PointXYZ(max_pt.x, min_pt.y, min_pt.z);
-    cloud_ptr->points[8] = pcl::PointXYZ(0.0, 0.0, 0.0);					// center
+    cloud_ptr->resize(5);
+    cloud_ptr->points[0] = pcl::PointXYZ(0, max_pt.y, max_pt.z);		// corner
+    cloud_ptr->points[1] = pcl::PointXYZ(0, max_pt.y, min_pt.z);
+    cloud_ptr->points[2] = pcl::PointXYZ(0, min_pt.y, max_pt.z);
+    cloud_ptr->points[3] = pcl::PointXYZ(0, min_pt.y, min_pt.z);
+    cloud_ptr->points[4] = pcl::PointXYZ(0.0, 0.0, 0.0);					  // center
     pcl::transformPointCloud(*cloud_ptr, *cloud_ptr, w2p);
 
     
 
     ////////////////////////////////////   marker setting
-    visualization_msgs::Marker marker_pt,marker_pts,marker_vector;
+    visualization_msgs::Marker marker_pt,marker_pts,marker_vector,marker_text;
     
-    // set corner point
+    // Marker for corner points
     marker_pts.header.frame_id = "camera_depth_optical_frame";
     marker_pts.header.stamp = ros::Time::now();
-    geometry_msgs::Point pt[9];
-    for(int i=0; i<9;i++)
+    geometry_msgs::Point pt[5];
+    for(int i=0; i<5;i++)
     {
       pt[i].x=cloud_ptr->points[i].x/1.0f;  
       pt[i].y=cloud_ptr->points[i].y/1.0f;
       pt[i].z=cloud_ptr->points[i].z/1.0f;
-      if(i!=8)
-      marker_pts.points.push_back(pt[i]);
+      if(i!=4)
+            marker_pts.points.push_back(pt[i]);
     }
     marker_pts.ns = "corner_points";
     marker_pts.id = idx;
@@ -396,16 +393,16 @@ int getPlaneModel(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_ptr, pcl::Mode
     
     markers.markers.push_back(marker_pts);
 
-    // set center point
+    // Marker for center point
     marker_pt.header.frame_id = "camera_depth_optical_frame";
     marker_pt.header.stamp = ros::Time::now();
     marker_pt.ns = "center_point";
     marker_pt.id = idx*100;
     marker_pt.type = visualization_msgs::Marker::SPHERE;
     marker_pt.action = visualization_msgs::Marker::ADD;
-    marker_pt.pose.position.x = pt[8].x;
-    marker_pt.pose.position.y = pt[8].y;
-    marker_pt.pose.position.z = pt[8].z;
+    marker_pt.pose.position.x = pt[4].x;
+    marker_pt.pose.position.y = pt[4].y;
+    marker_pt.pose.position.z = pt[4].z;
     marker_pt.pose.orientation.x = 0.0;
     marker_pt.pose.orientation.y = 0.0;
     marker_pt.pose.orientation.z = 0.0;
@@ -421,11 +418,11 @@ int getPlaneModel(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_ptr, pcl::Mode
 
     markers.markers.push_back(marker_pt);
 
-    // set normal vector
+    // Marker for normal vector
     geometry_msgs::Point end_pt;
-    end_pt.x =pt[8].x-coefficients_plane->values[0]/10.0;
-    end_pt.y =pt[8].y-coefficients_plane->values[1]/10.0;
-    end_pt.z =pt[8].z-coefficients_plane->values[2]/10.0;
+    end_pt.x =pt[4].x-coefficients_plane->values[0]/10.0;
+    end_pt.y =pt[4].y-coefficients_plane->values[1]/10.0;
+    end_pt.z =pt[4].z-coefficients_plane->values[2]/10.0;
 
     marker_vector.header.frame_id = "camera_depth_optical_frame";
     marker_vector.header.stamp = ros::Time::now();
@@ -448,11 +445,44 @@ int getPlaneModel(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_ptr, pcl::Mode
     marker_vector.color.b = 0.0f;
     marker_vector.color.a = 1.0;
     marker_vector.lifetime = ros::Duration(0.2);
-    marker_vector.points.push_back(pt[8]);
+    marker_vector.points.push_back(pt[4]);
     marker_vector.points.push_back(end_pt);
 
     markers.markers.push_back(marker_vector);
 
+    // Marker for text visualization
+    std::string msg="";
+    std::stringstream ss;
+    ss << width;
+    msg += "Width: " + ss.str() + " m\n";
+    ss.str("");
+    ss << height;
+    msg += "Height: " + ss.str() + " m";
+
+
+    marker_text.header.frame_id = "camera_depth_optical_frame";
+    marker_text.header.stamp = ros::Time::now();
+    marker_text.ns = "text";
+    marker_text.id = idx*10000;
+    marker_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    marker_text.action = visualization_msgs::Marker::ADD;
+    marker_text.pose.position.x = end_pt.x;
+    marker_text.pose.position.y = end_pt.y;
+    marker_text.pose.position.z = end_pt.z;
+    marker_text.pose.orientation.x = 0.0;
+    marker_text.pose.orientation.y = 0.0;
+    marker_text.pose.orientation.z = 0.0;
+    marker_text.pose.orientation.w = 1.0;
+    marker_text.scale.x = 0.05f;
+    marker_text.scale.y = 0.05f;
+    marker_text.scale.z = 0.05f;
+    marker_text.color.r = 0.0f;
+    marker_text.color.g = 0.0f;
+    marker_text.color.b = 0.0f;
+    marker_text.color.a = 1.0;
+    marker_text.lifetime = ros::Duration(0.2);
+    marker_text.text = msg;
+    markers.markers.push_back(marker_text);
 
     ////////////////////////////////////  set plane model
     quadrobot_msgs::Plane plane;
@@ -461,15 +491,16 @@ int getPlaneModel(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_ptr, pcl::Mode
     plane.width = width;
     plane.height = height;
     plane.depth = depth;
+    
     for(int i=0;i<4;i++)
     {
       plane.coef[i] = coefficients_plane->values[i];
     }
-    for(int i=0;i<8;i++)
+    for(int i=0;i<4;i++)
     {
       plane.corners[i] = pt[i];
     }
-    plane.center = pt[8];
+    plane.center = pt[4];
 
     planes.planes.push_back(plane);
 

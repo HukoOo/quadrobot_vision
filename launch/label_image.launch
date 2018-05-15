@@ -4,7 +4,7 @@
   
   
   <!-- topics -->
-    <param name="rgb_topic"    value="/camera/rgb/image_color" />
+    <param name="rgb_topic"    value="/camera/color/image_raw" />
     
   <!-- classification -->
     <param name="model_file"   value="$(find quadrobot_vision)/model/output_graph.pb"/>

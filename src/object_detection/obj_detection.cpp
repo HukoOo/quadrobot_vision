@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/Point.h>
+#include <std_msgs/String.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 //#include <quadrobot_msgs/Plane.h>
@@ -58,6 +59,7 @@ class Cluster
   // Create a ROS subscriber for the input point cloud
   ros::Subscriber cloud_sub_;
   ros::Publisher pub_cluster,pub_marker,pub_plane,cloud_pub_;
+  ros::Publisher pub_msg;
   
   public:
   //  Init params
@@ -97,6 +99,7 @@ class Cluster
     // Create a ROS publisher for the output model coefficients
     pub_cluster = nh.advertise<sensor_msgs::PointCloud2> ("/object/clusters", 100);
     pub_marker = nh.advertise<visualization_msgs::MarkerArray> ("/object/markers", 10);
+    pub_msg = nh.advertise<std_msgs::String>("/object/num_obj", 1000);
 
   }
   ~Cluster()
@@ -197,6 +200,13 @@ class Cluster
 
   // Publish markers
   pub_marker.publish(markers);
+
+  std_msgs::String msg;
+
+  std::stringstream ss;
+  ss << "Number of objects= "<< j;
+  msg.data = ss.str();
+  pub_msg.publish(msg);
   }
 
   int getBoundingBox(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_ptr, int idx, visualization_msgs::MarkerArray &markers)
@@ -280,6 +290,8 @@ class Cluster
     marker_pts.lifetime = ros::Duration(0.2);
     
     markers.markers.push_back(marker_pts);
+
+
   }
 
 };

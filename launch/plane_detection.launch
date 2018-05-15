@@ -1,31 +1,31 @@
 <!-- ... -->
 <launch>
   <node pkg="quadrobot_vision" type="plane_detection" name="plane_detection" output="screen">
-    <param name="point_cloud_topic"     value="/camera/depth_registered/points"/>
+    <param name="point_cloud_topic"     value="/camera/depth/points"/>
     <param name="doFILTER"              value="true"/>  
     <!-- pass filter-->
-    <param name="x_min"              value="-10.0"/>
+    <param name="x_min"              value="-30.0"/>
     <param name="x_max"              value="30.0"/>
-    <param name="y_min"              value="-10.0"/>
-    <param name="y_max"              value="10.0"/>
+    <param name="y_min"              value="-30.0"/>
+    <param name="y_max"              value="30.0"/>
     <param name="z_min"              value="-3.0"/>
     <param name="z_max"              value="0.0"/>
     <!-- voxel filter-->
     <param name="val_vox"               value="1.0f"/>
     <param name="val_pass"               value="3.0"/>
     <!-- plane extraction -->
-    <param name="DistanceThreshold"     value="0.065"/>
-    <param name="SmoothnessThresholdDegree"  value="15.0"/>
-    <param name="MinClusterSize"        value="500"/>
+    <param name="DistanceThreshold"     value="0.025"/>
+    <param name="SmoothnessThresholdDegree"  value="10.0"/>
+    <param name="MinClusterSize"        value="100"/>
     <!-- radius filter -->
     <param name="val_radius"            value="0.2"/>
     <param name="val_minpt"             value="20"/>
     <param name="minNeighbor"           value="10"/>
   </node>
   
-  
+  <!--
   <node pkg="tf2_ros" type="static_transform_publisher" name="realsense_base"
     args="0 0 1.0 0 0.707 0 0.707 map camera_link" />
-    
+    -->
 
 </launch>
